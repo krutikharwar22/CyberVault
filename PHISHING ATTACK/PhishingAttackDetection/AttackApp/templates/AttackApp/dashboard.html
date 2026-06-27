@@ -1,0 +1,1131 @@
+<!-- prettier-ignore -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CyberVault — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap">
+  <style>
+    /* ── CSS Variables ─────────────────────────────────────────────── */
+    :root {
+      --bg:          #0a0f0d;
+      --sidebar-bg:  #0d1410;
+      --card-bg:     #111a16;
+      --card-border: #1a2e22;
+      --green:       #00ff88;
+      --green-dim:   #00cc66;
+      --cyan:        #00e5ff;
+      --red:         #ff4466;
+      --yellow:      #f9c74f;
+      --blue:        #4cc9f0;
+      --text:        #c8d8d0;
+      --text-dim:    #5a7a68;
+      --mono:        'Share Tech Mono', monospace;
+      --body:        'Rajdhani', sans-serif;
+      --radius:      6px;
+    }
+
+    /* ── Reset ─────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--body);
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── Scanline overlay ───────────────────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent 0px, transparent 2px,
+        rgba(0,255,136,.018) 2px, rgba(0,255,136,.018) 4px
+      );
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* ── Sidebar ────────────────────────────────────────────────────── */
+    .sidebar {
+      width: 220px;
+      min-width: 220px;
+      background: var(--sidebar-bg);
+      border-right: 1px solid var(--card-border);
+      display: flex;
+      flex-direction: column;
+      padding: 24px 0 16px;
+    }
+    .logo-block {
+      padding: 0 20px 28px;
+      border-bottom: 1px solid var(--card-border);
+    }
+    .logo-block h1 {
+      font-family: var(--mono);
+      font-size: 1.3rem;
+      letter-spacing: 2px;
+      color: var(--green);
+      line-height: 1.1;
+    }
+    .logo-block h1 span { color: var(--text); }
+    .logo-block small {
+      font-family: var(--mono);
+      font-size: .65rem;
+      color: var(--text-dim);
+      letter-spacing: 1.5px;
+    }
+
+    .user-block {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 20px 20px 24px;
+      border-bottom: 1px solid var(--card-border);
+    }
+    .avatar {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: var(--card-border);
+      border: 2px solid var(--green-dim);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--mono);
+      font-size: .85rem;
+      color: var(--green);
+    }
+    .user-block .uname {
+      font-weight: 700;
+      font-size: .95rem;
+      line-height: 1.2;
+    }
+    .user-block .urole {
+      font-family: var(--mono);
+      font-size: .65rem;
+      color: var(--text-dim);
+      letter-spacing: 1px;
+    }
+
+    nav { flex: 1; padding: 16px 0; }
+    .nav-label {
+      font-family: var(--mono);
+      font-size: .6rem;
+      color: var(--text-dim);
+      letter-spacing: 2px;
+      padding: 8px 20px 4px;
+    }
+    nav a {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 20px;
+      color: var(--text-dim);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: .9rem;
+      letter-spacing: .5px;
+      transition: all .15s;
+      border-left: 3px solid transparent;
+    }
+    nav a:hover { color: var(--green); background: rgba(0,255,136,.04); }
+    nav a.active {
+      color: var(--green);
+      border-left-color: var(--green);
+      background: rgba(0,255,136,.07);
+    }
+    nav a svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+    .nav-logout-form { margin: 0; }
+    .nav-logout-link {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 18px;
+      color: var(--red);
+      background: transparent;
+      border: none;
+      text-align: left;
+      font-family: inherit;
+      font-size: .76rem;
+      letter-spacing: 1.2px;
+      cursor: pointer;
+      transition: all .15s;
+      border-left: 3px solid transparent;
+    }
+    .nav-logout-link:hover {
+      background: rgba(255,68,102,.08);
+      border-left-color: var(--red);
+    }
+
+    .sidebar-bottom {
+      padding: 16px 20px;
+      border-top: 1px solid var(--card-border);
+    }
+    .help-block {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px dashed rgba(26,46,34,.7);
+      font-family: var(--mono);
+      font-size: .65rem;
+      letter-spacing: 1px;
+      color: var(--text-dim);
+    }
+    .help-block .help-title {
+      color: var(--text);
+      letter-spacing: 1.6px;
+      margin-bottom: 6px;
+    }
+    .help-block a {
+      color: var(--cyan);
+      text-decoration: none;
+      word-break: break-word;
+    }
+    .help-block a:hover { text-decoration: underline; }
+    .rules-block {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px dashed rgba(26,46,34,.7);
+      font-family: var(--mono);
+      font-size: .62rem;
+      line-height: 1.55;
+      color: var(--text-dim);
+      letter-spacing: .5px;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+    .rules-block .rules-title {
+      color: var(--cyan);
+      letter-spacing: 1.6px;
+      margin-bottom: 8px;
+      font-size: .65rem;
+    }
+    .rules-block ol {
+      margin: 0;
+      padding-left: 1.1rem;
+    }
+    .rules-block li { margin-bottom: 6px; }
+    .rules-block strong { color: var(--text); font-weight: 600; }
+    .scan-domain-note {
+      display: block;
+      font-size: .65rem;
+      color: var(--text-dim);
+      margin-top: 4px;
+      max-width: 280px;
+    }
+    .kpi-card.scans::before { background: var(--cyan); }
+    .kpi-card.scans .kpi-value { color: var(--cyan); }
+    .kpi-card.safe::before { background: var(--green); }
+    .kpi-card.safe .kpi-value { color: var(--green); }
+    .sys-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--mono);
+      font-size: .65rem;
+      color: var(--green);
+      letter-spacing: 1.5px;
+      margin-bottom: 12px;
+    }
+    .dot-pulse {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: .4; transform: scale(.8); }
+    }
+    .logout-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 9px;
+      background: transparent;
+      border: 1px solid var(--red);
+      color: var(--red);
+      font-family: var(--mono);
+      font-size: .75rem;
+      letter-spacing: 2px;
+      cursor: pointer;
+      border-radius: var(--radius);
+      transition: all .15s;
+    }
+    .logout-btn:hover { background: rgba(255,68,102,.1); }
+
+    /* ── Main area ──────────────────────────────────────────────────── */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 28px;
+      border-bottom: 1px solid var(--card-border);
+    }
+    .topbar h2 {
+      font-family: var(--mono);
+      font-size: 1.6rem;
+      color: var(--green);
+      letter-spacing: 4px;
+    }
+    .topbar small {
+      font-family: var(--mono);
+      font-size: .65rem;
+      color: var(--text-dim);
+      letter-spacing: 2px;
+      display: block;
+      margin-top: 2px;
+    }
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      font-family: var(--mono);
+      font-size: .85rem;
+      color: var(--text-dim);
+    }
+    #live-clock { color: var(--green); }
+    .bell-btn {
+      background: none; border: none; cursor: pointer;
+      color: var(--text-dim); position: relative;
+    }
+    .notif-wrap { position: relative; }
+    .bell-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+    .notif-badge {
+      position: absolute; top: -4px; right: -4px;
+      width: 8px; height: 8px;
+      background: var(--red);
+      border-radius: 50%;
+    }
+    .notif-badge.count {
+      width: auto;
+      min-width: 16px;
+      height: 16px;
+      border-radius: 16px;
+      font-family: var(--mono);
+      font-size: .58rem;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 4px;
+    }
+    .notif-panel {
+      position: absolute;
+      top: 30px;
+      right: 0;
+      width: 340px;
+      max-height: 380px;
+      overflow-y: auto;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      box-shadow: 0 10px 26px rgba(0,0,0,.35);
+      display: none;
+      z-index: 40;
+    }
+    .notif-panel.open { display: block; }
+    .notif-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--card-border);
+      font-family: var(--mono);
+      font-size: .68rem;
+      letter-spacing: 1px;
+      color: var(--text);
+    }
+    .notif-mark-read {
+      background: transparent;
+      border: 1px solid var(--card-border);
+      color: var(--cyan);
+      font-family: var(--mono);
+      font-size: .6rem;
+      letter-spacing: 1px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .notif-list { padding: 6px 0; }
+    .notif-item {
+      border-bottom: 1px solid rgba(26,46,34,.5);
+      padding: 10px 14px;
+      font-size: .8rem;
+    }
+    .notif-item:last-child { border-bottom: none; }
+    .notif-item strong { display: block; margin-bottom: 2px; color: #e0f0e8; }
+    .notif-item small { color: var(--text-dim); font-family: var(--mono); font-size: .62rem; }
+
+    /* ── Scrollable content ─────────────────────────────────────────── */
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .content::-webkit-scrollbar { width: 4px; }
+    .content::-webkit-scrollbar-track { background: transparent; }
+    .content::-webkit-scrollbar-thumb { background: var(--card-border); border-radius: 2px; }
+
+    /* ── KPI cards row ──────────────────────────────────────────────── */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+    .kpi-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color .2s;
+    }
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+    }
+    .kpi-card.threats::before  { background: var(--red); }
+    .kpi-card.blocked::before  { background: var(--cyan); }
+    .kpi-card.users::before    { background: var(--green); }
+    .kpi-card.health::before   { background: var(--yellow); }
+    .kpi-label {
+      font-family: var(--mono);
+      font-size: .62rem;
+      letter-spacing: 2px;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+    }
+    .kpi-value {
+      font-family: var(--mono);
+      font-size: 2.2rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .kpi-card.threats .kpi-value  { color: var(--red); }
+    .kpi-card.blocked .kpi-value  { color: var(--cyan); }
+    .kpi-card.users .kpi-value    { color: var(--green); }
+    .kpi-card.health .kpi-value   { color: var(--yellow); }
+    .kpi-sub {
+      font-family: var(--mono);
+      font-size: .7rem;
+      color: var(--text-dim);
+      margin-top: 6px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .kpi-sub .arrow-up   { color: var(--cyan); }
+    .kpi-sub .arrow-down { color: var(--red); }
+    .kpi-sub .dot        { color: var(--green); }
+
+    /* ── Middle row ─────────────────────────────────────────────────── */
+    .middle-row {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 16px;
+    }
+
+    /* ── Card base ──────────────────────────────────────────────────── */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .card-title {
+      font-family: var(--mono);
+      font-size: .7rem;
+      letter-spacing: 2px;
+      color: var(--text-dim);
+    }
+    .live-badge {
+      font-family: var(--mono);
+      font-size: .6rem;
+      letter-spacing: 1.5px;
+      color: var(--green);
+      border: 1px solid var(--green-dim);
+      padding: 2px 8px;
+      border-radius: 2px;
+      animation: blink 2s infinite;
+    }
+    @keyframes blink { 50% { opacity: .4; } }
+
+    /* ── Activity feed ──────────────────────────────────────────────── */
+    .activity-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 0;
+      border-bottom: 1px solid var(--card-border);
+      font-size: .88rem;
+    }
+    .activity-item:last-child { border-bottom: none; }
+    .act-dot {
+      width: 8px; min-width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .act-dot.blocked   { background: var(--red); }
+    .act-dot.successful{ background: var(--green); }
+    .act-dot.flagged   { background: var(--yellow); }
+    .act-dot.completed { background: var(--cyan); }
+    .act-dot.detected  { background: var(--red); }
+    .act-desc { flex: 1; }
+    .act-desc strong { color: #e0f0e8; font-weight: 700; }
+    .act-status {
+      font-family: var(--mono);
+      font-size: .65rem;
+      padding: 2px 7px;
+      border-radius: 2px;
+      margin-right: auto;
+      margin-left: 6px;
+    }
+    .act-status.blocked    { background: rgba(255,68,102,.15); color: var(--red); border: 1px solid rgba(255,68,102,.3); }
+    .act-status.successful { background: rgba(0,255,136,.1); color: var(--green); border: 1px solid rgba(0,255,136,.3); }
+    .act-status.flagged    { background: rgba(249,199,79,.1); color: var(--yellow); border: 1px solid rgba(249,199,79,.3); }
+    .act-status.completed  { background: rgba(0,229,255,.1); color: var(--cyan); border: 1px solid rgba(0,229,255,.3); }
+    .act-status.detected   { background: rgba(255,68,102,.1); color: var(--red); border: 1px solid rgba(255,68,102,.3); }
+    .act-time {
+      font-family: var(--mono);
+      font-size: .65rem;
+      color: var(--text-dim);
+      white-space: nowrap;
+    }
+
+    /* ── Threat levels ──────────────────────────────────────────────── */
+    .threat-row {
+      margin-bottom: 12px;
+    }
+    .threat-row:last-child { margin-bottom: 0; }
+    .threat-meta {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--mono);
+      font-size: .7rem;
+      margin-bottom: 5px;
+    }
+    .threat-meta .name { color: var(--text); }
+    .threat-meta .pct  { color: var(--green); }
+    .threat-bar-bg {
+      width: 100%;
+      height: 4px;
+      background: rgba(255,255,255,.06);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .threat-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width .6s ease;
+    }
+
+    /* ── Bottom row ─────────────────────────────────────────────────── */
+    .bottom-row {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 16px;
+    }
+
+    /* ── Login table ────────────────────────────────────────────────── */
+    .login-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .85rem;
+    }
+    .login-table th {
+      font-family: var(--mono);
+      font-size: .62rem;
+      letter-spacing: 1.5px;
+      color: var(--text-dim);
+      text-align: left;
+      padding: 0 0 10px;
+      border-bottom: 1px solid var(--card-border);
+    }
+    .login-table td {
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(26,46,34,.5);
+    }
+    .login-table tr:last-child td { border-bottom: none; }
+
+    /* ── Active users list ───────────────────────────────────────────────── */
+    .active-users-table td, .active-users-table th { padding: 9px 0; }
+    .active-users-empty {
+      font-family: var(--mono);
+      font-size: .72rem;
+      color: var(--text-dim);
+    }
+    .status-badge {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: .6rem;
+      letter-spacing: 1px;
+      padding: 2px 8px;
+      border-radius: 2px;
+    }
+    .status-badge.safe    { background: rgba(0,255,136,.12); color: var(--green); border: 1px solid rgba(0,255,136,.25); }
+    .status-badge.blocked { background: rgba(255,68,102,.12); color: var(--red); border: 1px solid rgba(255,68,102,.25); }
+    .status-badge.review  { background: rgba(249,199,79,.12); color: var(--yellow); border: 1px solid rgba(249,199,79,.25); }
+
+    .mini-divider {
+      border-top: 1px solid var(--card-border);
+      margin: 16px 0 12px;
+      opacity: .9;
+    }
+    .mini-kpis {
+      display: flex;
+      gap: 12px;
+      margin: 8px 0 12px;
+      font-family: var(--mono);
+      font-size: .65rem;
+      color: var(--text-dim);
+      letter-spacing: 1.2px;
+    }
+    .mini-kpis strong {
+      color: var(--text);
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    /* ── Quick actions ──────────────────────────────────────────────── */
+    .quick-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .quick-btn {
+      background: rgba(0,255,136,.04);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 20px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      color: var(--cyan);
+      font-family: var(--mono);
+      font-size: .72rem;
+      letter-spacing: 1px;
+      transition: all .15s;
+    }
+    .quick-btn:hover {
+      background: rgba(0,229,255,.07);
+      border-color: var(--cyan);
+      color: #fff;
+    }
+    .quick-btn svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.6; }
+
+    /* ── Toast notification ─────────────────────────────────────────── */
+    #toast {
+      position: fixed;
+      bottom: 24px; right: 24px;
+      background: var(--card-bg);
+      border: 1px solid var(--green-dim);
+      color: var(--green);
+      font-family: var(--mono);
+      font-size: .75rem;
+      letter-spacing: 1px;
+      padding: 12px 20px;
+      border-radius: var(--radius);
+      opacity: 0;
+      transform: translateY(12px);
+      transition: all .3s;
+      z-index: 9998;
+      pointer-events: none;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+    #toast.error { border-color: var(--red); color: var(--red); }
+  </style>
+</head>
+<body>
+
+<!-- ══ SIDEBAR ══════════════════════════════════════════════════════════ -->
+<aside class="sidebar">
+  <div class="logo-block">
+    <h1>CYBER<span>VAULT</span></h1>
+    <small>SECURITY SYSTEM v2.4</small>
+  </div>
+
+  <div class="user-block">
+    <div class="avatar">{{ user.username|slice:":2"|upper }}</div>
+    <div>
+      <div class="uname">{{ user.username }}</div>
+      <div class="urole">{{ dashboard_role_label|upper }}</div>
+    </div>
+  </div>
+
+  <nav>
+    <div class="nav-label">MAIN</div>
+    <a href="{% url 'AttackApp:dashboard' %}" class="active">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </a>
+    <a href="{% url 'AttackApp:profile' %}">Profile</a>
+    <a href="{% url 'AttackApp:scan' %}">New Scan</a>
+    <a href="{% url 'AttackApp:history' %}">Scan History</a>
+    <a href="{% url 'AttackApp:settings' %}">Settings</a>
+    <a href="{% url 'AttackApp:logs' %}">Logs</a>
+    {% if is_admin_dashboard %}
+    <a href="{% url 'AttackApp:admin_users' %}">Users</a>
+    <a href="{% url 'AttackApp:admin_security' %}">Security</a>
+    {% endif %}
+    <form class="nav-logout-form" method="post" action="{% url 'AttackApp:logout' %}">
+      {% csrf_token %}
+      <button class="nav-logout-link" type="submit">Logout</button>
+    </form>
+  </nav>
+
+  <div class="sidebar-bottom">
+    <div class="sys-status">
+      <div class="dot-pulse"></div>
+      SYSTEM ONLINE
+    </div>
+
+    <div class="help-block">
+      <div class="help-title">CYBERCRIME HELP</div>
+      <div>Helpline: <strong style="color:var(--text);letter-spacing:1.5px;">1930</strong></div>
+      <div>
+        Complaint:
+        <a href="https://www.cybercrime.gov.in/Webform/Accept.aspx" target="_blank" rel="noopener noreferrer">
+          cybercrime.gov.in
+        </a>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ══ MAIN ═════════════════════════════════════════════════════════════ -->
+<div class="main">
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div>
+      <h2>DASHBOARD</h2>
+      <small>{{ dashboard_subtitle|upper }}</small>
+    </div>
+    <div class="topbar-right">
+      <span id="live-clock">--:--:--</span>
+      <div class="notif-wrap">
+        <button id="btn-notifications" class="bell-btn" title="Notifications" type="button">
+          <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span id="notif-badge" class="notif-badge count" {% if notification_unread_count < 1 %}style="display:none"{% endif %}>{{ notification_unread_count }}</span>
+        </button>
+        <div id="notif-panel" class="notif-panel" aria-hidden="true">
+          <div class="notif-header">
+            <span>ALERT NOTIFICATIONS</span>
+            <button id="btn-mark-read" class="notif-mark-read" type="button">MARK READ</button>
+          </div>
+          <div id="notif-list" class="notif-list">
+            <div class="notif-item"><small>Loading...</small></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scrollable content -->
+  <div class="content">
+
+    <!-- ── KPI Row (your scans) ─────────────────────────────────────── -->
+    <div class="kpi-row">
+      <div class="kpi-card scans">
+        <div class="kpi-label">TOTAL SCANS</div>
+        <div class="kpi-value" id="kpi-scans-total">{{ scan_kpis.scans_total }}</div>
+        <div class="kpi-sub">
+          <span class="dot">●</span>
+          <span id="kpi-scans-today">+{{ scan_kpis.scans_today }} today</span>
+        </div>
+      </div>
+      <div class="kpi-card threats">
+        <div class="kpi-label">THREATS FOUND</div>
+        <div class="kpi-value" id="kpi-scans-threats">{{ scan_kpis.scans_threats }}</div>
+        <div class="kpi-sub">In your scan history</div>
+      </div>
+      <div class="kpi-card safe">
+        <div class="kpi-label">VERIFIED SAFE</div>
+        <div class="kpi-value" id="kpi-scans-safe">{{ scan_kpis.scans_safe }}</div>
+        <div class="kpi-sub">Official domains only</div>
+      </div>
+      <div class="kpi-card blocked">
+        <div class="kpi-label">NEW SCAN</div>
+        <div class="kpi-value" style="font-size:1rem;letter-spacing:1px;">URL · EMAIL</div>
+        <div class="kpi-sub"><a href="{% url 'AttackApp:scan' %}" style="color:var(--cyan);text-decoration:none;">Open scanner →</a></div>
+      </div>
+    </div>
+
+    <!-- ── Middle row ─────────────────────────────────────────────── -->
+    <div class="middle-row">
+
+      <div class="card" style="flex:1.4;">
+        <div class="card-header">
+          <span class="card-title">YOUR SCAN RESULTS</span>
+          <a href="{% url 'AttackApp:history' %}" style="font-family:var(--mono);font-size:.6rem;color:var(--cyan);text-decoration:none;letter-spacing:1px;">VIEW ALL →</a>
+        </div>
+        <table class="login-table">
+          <thead>
+            <tr>
+              <th>Target</th>
+              <th>Kind</th>
+              <th>Time</th>
+              <th>Result</th>
+            </tr>
+          </thead>
+          <tbody id="scan-tbody">
+            {% for s in recent_scans %}
+            <tr>
+              <td style="font-family:var(--mono);font-size:.78rem;color:var(--text-dim);max-width:220px;">
+                {{ s.url|truncatechars:48 }}
+              </td>
+              <td style="font-family:var(--mono);font-size:.72rem;">{{ s.scan_kind|default:"url"|upper }}</td>
+              <td class="local-time" data-iso="{{ s.created_at|date:'c' }}" style="font-family:var(--mono);font-size:.8rem;"></td>
+              <td>
+                {% if s.result|lower == "safe" %}
+                  <span class="status-badge safe">SAFE</span>
+                {% else %}
+                  <span class="status-badge blocked">{{ s.result|upper }}</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" style="font-family:var(--mono);font-size:.72rem;color:var(--text-dim);padding:12px;">
+                No scans yet. Use <a href="{% url 'AttackApp:scan' %}" style="color:var(--cyan);">New Scan</a>.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:16px;flex:0.9;">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">THREAT TYPES (SCANS)</span>
+          </div>
+          <div id="scan-breakdown">
+            {% for row in scan_breakdown %}
+            <div class="threat-row">
+              <div class="threat-meta">
+                <span class="name">{{ row.label }}</span>
+                <span class="pct" style="color:{{ row.color }}">{{ row.count }}</span>
+              </div>
+              <div class="threat-bar-bg">
+                <div class="threat-bar-fill" style="width:{{ row.percentage }}%; background:{{ row.color }};"></div>
+              </div>
+            </div>
+            {% empty %}
+            <p style="font-family:var(--mono);font-size:.7rem;color:var(--text-dim);">No threats in your scan history yet.</p>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">DOMAIN POLICY</span></div>
+          <p style="font-family:var(--mono);font-size:.68rem;color:var(--text-dim);line-height:1.6;padding:4px 2px 8px;">
+            SAFE = verified official domain only. Unknown or look-alike domains are THREAT.
+            Forwarded links are judged by the destination domain.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Bottom row ─────────────────────────────────────────────── -->
+    <div class="bottom-row">
+      <div class="card" style="flex:1;">
+        <div class="card-header">
+          <span class="card-title">QUICK ACTIONS</span>
+        </div>
+        <div class="quick-grid">
+          <button class="quick-btn" type="button" onclick="window.location='{{ scan_url }}'">
+            New URL / Email Scan
+          </button>
+          <button class="quick-btn" id="btn-view-report">
+            7-Day Scan Report
+          </button>
+          <button class="quick-btn" type="button" onclick="window.location='{{ history_url }}'">
+            Scan History
+          </button>
+          {% if is_admin_dashboard %}
+          <button class="quick-btn" id="btn-block-ip">Block IP</button>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ── Local time (matches live clock; DB stores UTC) ───────────────────────────
+function formatLocalHM(isoStr) {
+  if (!isoStr) return '—';
+  const d = new Date(isoStr);
+  if (Number.isNaN(d.getTime())) return isoStr;
+  return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+function applyLocalTimes(root) {
+  (root || document).querySelectorAll('td.local-time[data-iso]').forEach(function (el) {
+    el.textContent = formatLocalHM(el.getAttribute('data-iso'));
+  });
+}
+
+// ── Live clock ────────────────────────────────────────────────────────────
+(function tickClock() {
+  const el = document.getElementById('live-clock');
+  function update() {
+    const now = new Date();
+    el.textContent = now.toTimeString().slice(0, 8);
+  }
+  update();
+  setInterval(update, 1000);
+})();
+applyLocalTimes();
+
+// ── Toast helper ─────────────────────────────────────────────────────────
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = isError ? 'show error' : 'show';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.className = ''; }, 3500);
+}
+
+let previousUnreadCount = 0;
+let notificationBootstrapped = false;
+
+function setNotifBadge(unreadCount) {
+  const badge = document.getElementById('notif-badge');
+  if (!badge) return;
+  const count = Number(unreadCount || 0);
+  if (notificationBootstrapped && count > previousUnreadCount) {
+    showToast('New alert notification received');
+  }
+  previousUnreadCount = count;
+  notificationBootstrapped = true;
+  if (count > 0) {
+    badge.style.display = 'flex';
+    badge.textContent = count > 99 ? '99+' : String(count);
+  } else {
+    badge.style.display = 'none';
+    badge.textContent = '0';
+  }
+}
+
+function renderNotifications(items) {
+  const list = document.getElementById('notif-list');
+  if (!list) return;
+  if (!items || !items.length) {
+    list.innerHTML = '<div class="notif-item"><small>No new notifications.</small></div>';
+    return;
+  }
+  list.innerHTML = items.map(n => `
+    <div class="notif-item">
+      <strong>${escHtml(n.title || 'Alert')}</strong>
+      <div>${escHtml(n.description || '')}</div>
+      <small>${escHtml((n.status || '').toUpperCase())} · ${escHtml(n.time_ago || '')}</small>
+    </div>
+  `).join('');
+}
+
+async function loadNotifications() {
+  try {
+    const r = await fetch("{% url 'AttackApp:notifications_api' %}");
+    const data = await r.json();
+    setNotifBadge(data.unread_count || 0);
+    renderNotifications(data.items || []);
+  } catch (e) {
+    renderNotifications([]);
+    showToast('Failed to load notifications', true);
+  }
+}
+
+// ── CSRF helper ───────────────────────────────────────────────────────────
+function getCookie(name) {
+  const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+  return v ? v.pop() : '';
+}
+
+// ── Run Scan ─────────────────────────────────────────────────────────────
+const runScanBtn = document.getElementById('btn-run-scan');
+if (runScanBtn) runScanBtn.addEventListener('click', async function() {
+  this.textContent = '…scanning';
+  this.disabled = true;
+  try {
+    const r = await fetch("{% url 'AttackApp:run_scan' %}", {
+      method: 'POST',
+      headers: { 'X-CSRFToken': getCookie('csrftoken') }
+    });
+    const data = await r.json();
+    if (data.success) {
+      showToast(`Scan complete — ${data.new_alerts} new alert(s)`);
+      refreshDashboard();
+    } else {
+      showToast('Scan failed: ' + data.error, true);
+    }
+  } catch(e) { showToast('Network error', true); }
+  finally {
+    this.innerHTML = '<svg viewBox="0 0 24 24" style="width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.6"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Run Scan';
+    this.disabled = false;
+  }
+});
+
+// ── Block IP (prompt) ─────────────────────────────────────────────────────
+const blockIpBtn = document.getElementById('btn-block-ip');
+if (blockIpBtn) blockIpBtn.addEventListener('click', async function() {
+  const ip = prompt('Enter IP address to block:');
+  if (!ip) return;
+  const reason = prompt('Reason (optional, shown in audit log):') || '';
+  try {
+    const r = await fetch("{% url 'AttackApp:block_ip' %}", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: JSON.stringify({ ip, reason })
+    });
+    const data = await r.json();
+    showToast(data.success ? `${ip} blocked` : 'Block failed: ' + data.error, !data.success);
+  } catch(e) { showToast('Network error', true); }
+});
+
+// ── View Report ───────────────────────────────────────────────────────────
+document.getElementById('btn-view-report').addEventListener('click', async function() {
+  try {
+    const r = await fetch("{% url 'AttackApp:view_report' %}");
+    const data = await r.json();
+    const lines = Object.entries(data.report).map(([d, v]) =>
+      d + ': ' + Object.entries(v).map(([k, n]) => k + '=' + n).join(', ')
+    );
+    alert('7-Day Threat Report\n\n' + (lines.join('\n') || 'No data yet.'));
+  } catch(e) { showToast('Failed to fetch report', true); }
+});
+
+const notifBtn = document.getElementById('btn-notifications');
+const notifPanel = document.getElementById('notif-panel');
+const notifMarkReadBtn = document.getElementById('btn-mark-read');
+
+if (notifBtn && notifPanel) {
+  notifBtn.addEventListener('click', async function(event) {
+    event.stopPropagation();
+    const isOpen = notifPanel.classList.contains('open');
+    if (isOpen) {
+      notifPanel.classList.remove('open');
+      notifPanel.setAttribute('aria-hidden', 'true');
+      return;
+    }
+    await loadNotifications();
+    notifPanel.classList.add('open');
+    notifPanel.setAttribute('aria-hidden', 'false');
+  });
+
+  document.addEventListener('click', function(event) {
+    if (!notifPanel.classList.contains('open')) return;
+    if (notifPanel.contains(event.target) || notifBtn.contains(event.target)) return;
+    notifPanel.classList.remove('open');
+    notifPanel.setAttribute('aria-hidden', 'true');
+  });
+}
+
+if (notifMarkReadBtn) {
+  notifMarkReadBtn.addEventListener('click', async function() {
+    try {
+      const r = await fetch("{% url 'AttackApp:notifications_mark_read' %}", {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCookie('csrftoken') }
+      });
+      const data = await r.json();
+      setNotifBadge(data.unread_count || 0);
+      showToast('Notifications marked as read');
+    } catch (e) {
+      showToast('Failed to mark notifications', true);
+    }
+  });
+}
+
+// ── Live dashboard refresh ────────────────────────────────────────────────
+async function refreshDashboard() {
+  try {
+    const r = await fetch("{% url 'AttackApp:dashboard_data' %}");
+    const d = await r.json();
+
+    if (d.scan_kpis) {
+      document.getElementById('kpi-scans-total').textContent = d.scan_kpis.scans_total;
+      document.getElementById('kpi-scans-threats').textContent = d.scan_kpis.scans_threats;
+      document.getElementById('kpi-scans-safe').textContent = d.scan_kpis.scans_safe;
+      const todayEl = document.getElementById('kpi-scans-today');
+      if (todayEl) todayEl.textContent = '+' + d.scan_kpis.scans_today + ' today';
+    }
+    const breakdownEl = document.getElementById('scan-breakdown');
+    if (breakdownEl && d.scan_breakdown && d.scan_breakdown.length) {
+      breakdownEl.innerHTML = d.scan_breakdown.map(row => `
+        <div class="threat-row">
+          <div class="threat-meta">
+            <span class="name">${escHtml(row.label)}</span>
+            <span class="pct" style="color:${row.color}">${row.count}</span>
+          </div>
+          <div class="threat-bar-bg">
+            <div class="threat-bar-fill" style="width:${row.percentage}%;background:${row.color}"></div>
+          </div>
+        </div>`).join('');
+    }
+    if (d.notifications) {
+      setNotifBadge(d.notifications.unread_count || 0);
+    }
+    const scanBody = document.getElementById('scan-tbody');
+    if (scanBody && d.recent_scans && d.recent_scans.length) {
+      scanBody.innerHTML = d.recent_scans.map(s => {
+        const isSafe = (s.result || '').toLowerCase() === 'safe';
+        const badgeClass = isSafe ? 'safe' : 'blocked';
+        const badgeText = (s.result || 'unknown').toUpperCase();
+        const kind = (s.scan_kind || 'url').toUpperCase();
+        return `
+        <tr>
+          <td style="font-family:var(--mono);font-size:.78rem;color:var(--text-dim)">${escHtml(s.url).slice(0, 48)}${(s.url && s.url.length > 48) ? '…' : ''}</td>
+          <td style="font-family:var(--mono);font-size:.72rem">${kind}</td>
+          <td style="font-family:var(--mono);font-size:.8rem">${formatLocalHM(s.created_at)}</td>
+          <td><span class="status-badge ${badgeClass}">${badgeText}</span></td>
+        </tr>`;
+      }).join('');
+    }
+  } catch (e) {
+    console.warn('Dashboard refresh failed:', e);
+  }
+}
+
+function capitalize(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1).replace('_', ' ') : ''; }
+function escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+loadNotifications();
+setInterval(loadNotifications, 15000);
+refreshDashboard();
+const refreshMs = Number('{{ dashboard_refresh_ms|default:"5000" }}') || 5000;
+setInterval(refreshDashboard, refreshMs);
+</script>
+</body>
+</html>

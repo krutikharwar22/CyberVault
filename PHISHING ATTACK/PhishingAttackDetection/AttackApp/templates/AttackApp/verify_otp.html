@@ -1,0 +1,20 @@
+{% extends 'AttackApp/base.html' %}
+{% block title %}Enter OTP{% endblock %}
+{% block content %}
+<div style="max-width:400px;margin:6rem auto;padding:2rem">
+  <h2>Enter OTP</h2>
+  <p>Check your email for the 5-digit code. It expires in 2 minutes.</p>
+  {% for msg in messages %}
+  <div class="alert">{{ msg }}</div>
+  {% endfor %}
+  <form method="post">
+    {% csrf_token %}
+    <label>OTP Code</label>
+    <input type="text" name="otp" maxlength="5" pattern="\d{5}" required autofocus
+           placeholder="12345"
+           style="width:100%;padding:.6rem;margin:.5rem 0 1rem;letter-spacing:.3rem;font-size:1.4rem;text-align:center">
+    <button type="submit" class="btn">Verify OTP</button>
+  </form>
+  <p><a href="{% url 'AttackApp:forgot_password' %}">← Request a new OTP</a></p>
+</div>
+{% endblock %}

@@ -1,0 +1,492 @@
+{% extends 'AttackApp/base.html' %}
+
+{% block content %}
+<h1>New Scan</h1>
+
+<div class="scan-wrap" style="max-width:960px;margin-top:12px;padding:12px 14px;border:1px solid rgba(30,58,95,0.8);border-radius:8px;background:rgba(0,245,255,0.04);font-family:var(--font-mono);font-size:0.75rem;color:var(--text-dim);line-height:1.55;">
+  <strong style="color:var(--accent);letter-spacing:1px;">RULES</strong>
+  <ul style="margin:8px 0 0 1.1rem;">
+    <li><strong>SAFE</strong> only for verified official domains (e.g. google.com). HTTPS or a green padlock is not enough.</li>
+    <li>Look-alike domains (paypa1.com, amazon-security-login.net) are marked <strong>THREAT</strong>.</li>
+    <li><strong>Email:</strong> every link is checked; forwarded messages are judged by the link domain, not the sender name.</li>
+    <li>If a link forwards to another site, the <strong>destination domain</strong> must be official to trust it.</li>
+  </ul>
+</div>
+
+<style>
+  .scan-wrap {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 960px;
+  }
+  .mode-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--text-mid);
+  }
+  .mode-row label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    padding: 6px 10px;
+    border: 1px solid rgba(30, 58, 95, 0.8);
+    border-radius: 6px;
+    background: rgba(0, 245, 255, 0.04);
+  }
+  .mode-row input { accent-color: var(--accent); }
+  .scan-panel {
+    background: rgba(0, 245, 255, 0.04);
+    border: 1px solid rgba(30, 58, 95, 0.8);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .scan-panel h2 {
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    letter-spacing: 2px;
+    color: var(--text-mid);
+    margin-bottom: 10px;
+  }
+  .scan-panel input[type="text"],
+  .scan-panel textarea {
+    width: 100%;
+    background: rgba(1, 4, 9, 0.65);
+    border: 1px solid rgba(30, 58, 95, 0.9);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 0.88rem;
+    padding: 10px 12px;
+  }
+  .scan-panel textarea { min-height: 160px; resize: vertical; }
+  .scan-panel button {
+    margin-top: 12px;
+    padding: 10px 18px;
+    font-family: var(--font-display);
+    letter-spacing: 2px;
+    font-size: 0.78rem;
+    border-radius: 6px;
+    border: 1px solid var(--accent);
+    background: linear-gradient(135deg, rgba(0,245,255,0.12), rgba(0,255,157,0.06));
+    color: var(--accent);
+    cursor: pointer;
+  }
+  .scan-panel button:hover {
+    box-shadow: 0 0 18px rgba(0, 245, 255, 0.25);
+  }
+  .qr-wrap { margin-top: 12px; display: flex; flex-direction: column; gap: 10px; }
+  .qr-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .qr-status { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-dim); }
+  .qr-video {
+    width: 100%;
+    max-width: 560px;
+    border-radius: 10px;
+    border: 1px solid rgba(30, 58, 95, 0.85);
+    background: rgba(1, 4, 9, 0.65);
+  }
+  .btn-ghost {
+    border-color: rgba(30, 58, 95, 0.9) !important;
+    background: rgba(0, 245, 255, 0.04) !important;
+    color: var(--text-mid) !important;
+  }
+  .btn-danger {
+    border-color: rgba(255, 77, 109, 0.75) !important;
+    color: var(--red) !important;
+    background: rgba(255, 77, 109, 0.06) !important;
+  }
+  .hint {
+    margin-top: 8px;
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    line-height: 1.45;
+  }
+  .err { color: var(--red); margin-top: 12px; font-family: var(--font-mono); font-size: 0.85rem; }
+  .out {
+    margin-top: 18px;
+    padding: 14px 16px;
+    border-radius: 8px;
+    border: 1px solid rgba(30, 58, 95, 0.85);
+    background: rgba(17, 24, 39, 0.65);
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--text-mid);
+    line-height: 1.5;
+  }
+  .out strong { color: var(--text-primary); }
+  .out .tag { color: var(--accent2); }
+  .out .warn { color: var(--yellow); }
+  .out .bad { color: var(--red); }
+  .dns-block { margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(30, 58, 95, 0.7); }
+  .list-tight { margin: 6px 0 0 16px; }
+</style>
+
+<form method="POST" class="scan-wrap" enctype="multipart/form-data">
+  {% csrf_token %}
+
+  <div class="mode-row">
+    <span style="color: var(--text-dim); letter-spacing: 1px;">MODE</span>
+    <label><input type="radio" name="scan_mode" value="url" {% if scan_mode == "url" %}checked{% endif %}> URL + IPs</label>
+    <label><input type="radio" name="scan_mode" value="email" {% if scan_mode == "email" %}checked{% endif %}> Email text</label>
+    <label><input type="radio" name="scan_mode" value="data" {% if scan_mode == "data" %}checked{% endif %}> Payload / logs</label>
+  </div>
+
+  <div class="scan-panel" id="panel-url" {% if scan_mode != "url" %}style="display:none"{% endif %}>
+    <h2>URL + DNS</h2>
+    <input type="text" id="scan-url-input" name="url" placeholder="https://example.com/path" value="{{ scan_url|default:'' }}">
+    <p class="hint">Runs phishing/malware models on the URL and resolves the hostname to public/private IPs (defensive look‑ups only).</p>
+    <div style="margin-top:10px;">
+      <input type="file" name="url_file">
+      <p class="hint" style="margin-top:6px;">
+        Optional: upload a file and we’ll try to extract URLs from it (txt/csv/html/pdf/docx/images via OCR if enabled). We’ll scan multiple URLs in one go (limited).
+      </p>
+    </div>
+    <div class="qr-wrap" id="qr-wrap">
+      <div class="qr-row">
+        <button type="button" id="qr-start" class="btn-ghost">Scan QR (camera)</button>
+        <button type="button" id="qr-stop" class="btn-danger" style="display:none;">Stop</button>
+        <span class="qr-status" id="qr-status">Tip: scan first, then click “Scan URL”.</span>
+      </div>
+      <video id="qr-video" class="qr-video" autoplay playsinline muted style="display:none;"></video>
+      <p class="hint" id="qr-hint" style="margin-top:0;">
+        Works best on mobile Chrome/Edge over HTTPS or localhost. This tool reads the QR content and fills the URL field; it does not auto-open the site.
+      </p>
+    </div>
+    <button type="submit">Scan URL</button>
+  </div>
+
+  <div class="scan-panel" id="panel-email" {% if scan_mode != "email" %}style="display:none"{% endif %}>
+    <h2>Email body or headers</h2>
+    <textarea name="email_body" placeholder="Paste suspicious message text…">{{ email_body|default:'' }}</textarea>
+    <p class="hint">Extracts links, scores each with the same models as URL scan, and flags common phishing wording / IDN hints.</p>
+    <button type="submit">Scan email</button>
+  </div>
+
+  <div class="scan-panel" id="panel-data" {% if scan_mode != "data" %}style="display:none"{% endif %}>
+    <h2>Payload / log snippet</h2>
+    <textarea name="payload_data" placeholder="Paste query strings, HTTP bodies, or WAF / server log lines…">{{ payload_data|default:'' }}</textarea>
+    <p class="hint">Heuristic checks for SQL injection patterns and DoS / rate‑limit style indicators (training / triage — not a full IDS).</p>
+    <button type="submit">Scan payload</button>
+  </div>
+</form>
+
+<script>
+  (function () {
+    var modes = document.querySelectorAll('input[name="scan_mode"]');
+    var panels = {
+      url: document.getElementById('panel-url'),
+      email: document.getElementById('panel-email'),
+      data: document.getElementById('panel-data'),
+    };
+    function sync() {
+      var v = 'url';
+      modes.forEach(function (r) { if (r.checked) v = r.value; });
+      panels.url.style.display = v === 'url' ? 'block' : 'none';
+      panels.email.style.display = v === 'email' ? 'block' : 'none';
+      panels.data.style.display = v === 'data' ? 'block' : 'none';
+    }
+    modes.forEach(function (r) { r.addEventListener('change', sync); });
+  })();
+</script>
+
+<script>
+  (function () {
+    var startBtn = document.getElementById('qr-start');
+    var stopBtn = document.getElementById('qr-stop');
+    var video = document.getElementById('qr-video');
+    var statusEl = document.getElementById('qr-status');
+    var urlInput = document.getElementById('scan-url-input');
+
+    if (!startBtn || !stopBtn || !video || !statusEl || !urlInput) return;
+
+    var stream = null;
+    var detector = null;
+    var rafId = 0;
+    var running = false;
+
+    function setStatus(msg, kind) {
+      statusEl.textContent = msg;
+      statusEl.style.color = kind === 'bad' ? 'var(--red)' : (kind === 'good' ? 'var(--accent2)' : 'var(--text-dim)');
+    }
+
+    function normalizeUrlFromQr(text) {
+      var t = (text || '').trim();
+      if (!t) return '';
+      if (/^https?:\/\//i.test(t)) return t;
+      if (/^www\./i.test(t)) return 'http://' + t;
+      // If it's a bare domain/path, prefer https; server will still validate.
+      if (/^[a-z0-9.-]+\.[a-z]{2,}(\/.*)?$/i.test(t)) return 'https://' + t;
+      return t;
+    }
+
+    async function stop() {
+      running = false;
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = 0;
+      if (video) {
+        try { video.pause(); } catch (e) {}
+        video.srcObject = null;
+        video.style.display = 'none';
+      }
+      if (stream) {
+        try {
+          stream.getTracks().forEach(function (t) { try { t.stop(); } catch (e) {} });
+        } finally {
+          stream = null;
+        }
+      }
+      startBtn.style.display = '';
+      stopBtn.style.display = 'none';
+      if (!urlInput.value) setStatus('Tip: scan first, then click “Scan URL”.', 'info');
+    }
+
+    async function tick() {
+      if (!running) return;
+      try {
+        if (video.readyState >= 2 && detector) {
+          var barcodes = await detector.detect(video);
+          if (barcodes && barcodes.length) {
+            var raw = (barcodes[0] && barcodes[0].rawValue) ? barcodes[0].rawValue : '';
+            var normalized = normalizeUrlFromQr(raw);
+            if (normalized) {
+              urlInput.value = normalized;
+              setStatus('QR detected. URL filled — now click “Scan URL”.', 'good');
+              await stop();
+              return;
+            }
+          }
+        }
+      } catch (e) {
+        // If detect fails sporadically, keep trying; if it's a hard error, stop.
+      }
+      rafId = requestAnimationFrame(tick);
+    }
+
+    async function start() {
+      if (running) return;
+      if (!('mediaDevices' in navigator) || !navigator.mediaDevices.getUserMedia) {
+        setStatus('Camera not available in this browser.', 'bad');
+        return;
+      }
+      if (!('BarcodeDetector' in window)) {
+        setStatus('QR scanning not supported here. Use mobile Chrome/Edge, or paste the URL manually.', 'bad');
+        return;
+      }
+
+      try {
+        detector = new window.BarcodeDetector({ formats: ['qr_code'] });
+      } catch (e) {
+        setStatus('QR detector failed to initialize. Paste the URL manually.', 'bad');
+        return;
+      }
+
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' } },
+          audio: false
+        });
+        video.srcObject = stream;
+        video.style.display = 'block';
+        running = true;
+        startBtn.style.display = 'none';
+        stopBtn.style.display = '';
+        setStatus('Scanning… point the camera at a QR code.', 'info');
+        rafId = requestAnimationFrame(tick);
+      } catch (e) {
+        setStatus('Camera permission denied or unavailable.', 'bad');
+        await stop();
+      }
+    }
+
+    startBtn.addEventListener('click', function () { start(); });
+    stopBtn.addEventListener('click', function () { stop(); });
+
+    // If user switches scan mode away, stop camera.
+    var modeRadios = document.querySelectorAll('input[name="scan_mode"]');
+    modeRadios.forEach(function (r) {
+      r.addEventListener('change', function () {
+        var v = 'url';
+        modeRadios.forEach(function (x) { if (x.checked) v = x.value; });
+        if (v !== 'url') stop();
+      });
+    });
+  })();
+</script>
+
+{% if scan_error %}
+  <p class="err">{{ scan_error }}</p>
+{% endif %}
+
+{% if url_detail and scan_mode == "url" %}
+  <div class="out">
+    <div><strong>ML:</strong>
+      <span class="{% if url_detail.ml.verdict == 'threat' %}bad{% else %}tag{% endif %}">
+        {{ url_detail.ml.verdict|upper }}
+      </span>
+      {% if url_detail.ml.threat_type %}
+        <span> — type: <span class="warn">{{ url_detail.ml.threat_type|upper }}</span></span>
+      {% endif %}
+      {% if scan_score_display %}
+        <span> (score {{ scan_score_display }})</span>
+      {% endif %}
+    </div>
+    {% if url_detail.ml.domain_trust %}
+    <div class="dns-block">
+      <strong>Domain trust:</strong>
+      <span class="{% if url_detail.ml.domain_trust.trust == 'official' %}tag{% else %}bad{% endif %}">
+        {{ url_detail.ml.domain_trust.trust|upper }}
+      </span>
+      — {{ url_detail.ml.domain_trust.message }}
+      {% if url_detail.ml.domain_trust.forwarded_assessments %}
+        <ul class="list-tight" style="margin-top:8px;">
+          {% for f in url_detail.ml.domain_trust.forwarded_assessments %}
+            <li>Forward target: {{ f.host }} → {{ f.trust|upper }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </div>
+    {% endif %}
+    <div class="dns-block">
+      <strong>DNS:</strong>
+      host <span class="tag">{{ url_detail.dns.hostname|default:"—" }}</span>
+      {% if url_detail.dns.error %}
+        <span class="bad"> — {{ url_detail.dns.error }}</span>
+      {% else %}
+        <div>Public IPs: {% if url_detail.dns.ips_public %}{{ url_detail.dns.ips_public|join:", " }}{% else %}<span class="warn">none resolved</span>{% endif %}</div>
+        {% if url_detail.dns.ips_private %}
+          <div>Private/special IPs: {{ url_detail.dns.ips_private|join:", " }}</div>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+{% endif %}
+
+{% if file_url_report and scan_mode == "url" %}
+  <div class="out">
+    <div><strong>File scan:</strong> {{ file_url_report.count }} URL(s) scanned
+      {% if file_url_report.threat_count %} — <span class="bad">{{ file_url_report.threat_count }} flagged</span>{% endif %}
+      {% if file_url_report.skipped_count %} — <span class="warn">{{ file_url_report.skipped_count }} skipped</span>{% endif %}
+    </div>
+    {% if file_url_report.notes %}
+      <div class="dns-block">
+        <strong>Notes:</strong>
+        <ul class="list-tight">
+          {% for n in file_url_report.notes %}
+            <li>{{ n }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+    {% for u in file_url_report.urls %}
+      <div class="dns-block">
+        <div><strong>URL:</strong> <span class="tag">{{ u.url }}</span></div>
+        {% if u.error %}
+          <div class="bad">Error: {{ u.error }}</div>
+        {% else %}
+          <div>Verdict: <span class="{% if u.verdict == 'threat' %}bad{% else %}tag{% endif %}">{{ u.verdict|upper }}</span>
+            {% if u.threat_type %} ({{ u.threat_type|upper }}{% if u.score_display %}, score {{ u.score_display }}{% endif %}){% endif %}
+          </div>
+          {% if u.dns %}
+            <div>IPs: {% if u.dns.ips_public %}{{ u.dns.ips_public|join:", " }}{% else %}<span class="warn">—</span>{% endif %}
+              {% if u.dns.error %}<span class="bad"> {{ u.dns.error }}</span>{% endif %}
+            </div>
+          {% endif %}
+        {% endif %}
+      </div>
+    {% empty %}
+      <p class="hint" style="margin-top:10px;">No URLs found in the uploaded file.</p>
+    {% endfor %}
+  </div>
+{% endif %}
+
+{% if email_report %}
+  <div class="out">
+    <div><strong>Summary:</strong>
+      <span class="{% if email_report.summary_threat != 'safe' %}bad{% else %}tag{% endif %}">{{ email_report.summary_threat|upper }}</span>
+      {% if email_report.keyword_alert %}<span class="warn"> (keyword / IDN hints)</span>{% endif %}
+    </div>
+    {% if email_report.message_domain_note %}
+    <div class="dns-block" style="margin-top:10px;">
+      <strong>Message judgment (domains):</strong>
+      <span class="{% if email_report.message_domain_verdict == 'threat' %}bad{% elif email_report.message_domain_verdict == 'safe' %}tag{% else %}warn{% endif %}">
+        {{ email_report.message_domain_verdict|upper }}
+      </span>
+      — {{ email_report.message_domain_note }}
+      {% if email_report.forwarded_detected %}<span class="warn"> (forwarded message detected)</span>{% endif %}
+    </div>
+    {% endif %}
+    <div style="margin-top:10px;"><strong>Phishing signals:</strong> {{ email_report.phishing_signals.suspicious_phrase_hits }} phrase(s),
+      {{ email_report.phishing_signals.link_count }} link(s) extracted
+      {% if email_report.phishing_signals.idn_punycode_hint %}<span class="warn"> — punycode (xn--) present</span>{% endif %}
+    </div>
+    {% if email_report.phishing_signals.suspicious_phrases %}
+      <ul class="list-tight">
+        {% for p in email_report.phishing_signals.suspicious_phrases %}
+          <li>{{ p }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+    {% for u in email_report.urls %}
+      <div class="dns-block">
+        <div><strong>URL:</strong> <span class="tag">{{ u.url }}</span></div>
+        <div>Verdict: <span class="{% if u.verdict == 'threat' %}bad{% else %}tag{% endif %}">{{ u.verdict|upper }}</span>
+          {% if u.threat_type %} ({{ u.threat_type|upper }}, score {{ u.score|floatformat:3 }}){% endif %}
+        </div>
+        {% if u.domain_trust %}
+        <div>Domain: <span class="{% if u.domain_trust.trust == 'official' %}tag{% else %}bad{% endif %}">{{ u.domain_trust.trust|upper }}</span> — {{ u.domain_trust.message|truncatechars:100 }}</div>
+        {% endif %}
+        {% if u.dns %}
+          <div>IPs: {% if u.dns.ips_public %}{{ u.dns.ips_public|join:", " }}{% else %}<span class="warn">—</span>{% endif %}
+            {% if u.dns.error %}<span class="bad"> {{ u.dns.error }}</span>{% endif %}
+          </div>
+        {% endif %}
+      </div>
+    {% empty %}
+      <p class="hint" style="margin-top:10px;">No http(s) links found in the pasted text.</p>
+    {% endfor %}
+  </div>
+{% endif %}
+
+{% if data_report %}
+  <div class="out">
+    <div><strong>Payload summary:</strong> <span class="{% if data_report.summary_threat != 'safe' %}bad{% else %}tag{% endif %}">{{ data_report.summary_threat|upper }}</span></div>
+    <div class="dns-block">
+      <strong>SQL injection heuristic:</strong> risk <span class="warn">{{ data_report.sql_injection.risk|upper }}</span>
+      ({{ data_report.sql_injection.hit_count }} pattern hit(s))
+      {% if data_report.sql_injection.pattern_hits %}
+        <ul class="list-tight">
+          {% for h in data_report.sql_injection.pattern_hits %}
+            <li>{{ h.id }}: <code style="color: var(--text-primary);">{{ h.match }}</code></li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </div>
+    <div class="dns-block">
+      <strong>DoS / abuse indicators:</strong> risk <span class="warn">{{ data_report.dos.risk|upper }}</span>
+      {% if data_report.dos.repeated_source_ips %}
+        <div>Repeated source IPs in paste:</div>
+        <ul class="list-tight">
+          {% for r in data_report.dos.repeated_source_ips %}
+            <li>{{ r.ip }} — {{ r.lines }} line(s)</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+      {% if data_report.dos.pattern_hits %}
+        <ul class="list-tight">
+          {% for h in data_report.dos.pattern_hits %}
+            <li>{{ h.id }}: {{ h.match }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </div>
+  </div>
+{% endif %}
+
+{% endblock %}

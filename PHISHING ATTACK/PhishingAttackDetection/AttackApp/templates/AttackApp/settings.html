@@ -1,0 +1,191 @@
+{% extends 'AttackApp/base.html' %}
+
+{% block content %}
+<h1>Settings</h1>
+<style>
+  .settings-card {
+    margin-top: 16px;
+    background: rgba(0, 245, 255, 0.04);
+    border: 1px solid rgba(30, 58, 95, 0.8);
+    border-radius: 10px;
+    padding: 18px;
+    max-width: 920px;
+  }
+  .settings-row {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 14px;
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(30, 58, 95, 0.35);
+  }
+  .settings-row:last-child { border-bottom: none; }
+  .s-label {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 1px;
+    color: var(--text-mid);
+  }
+  .s-desc {
+    color: var(--text-dim);
+    font-size: 0.9rem;
+    margin-top: 6px;
+  }
+  .s-control input[type="number"],
+  .s-control input[type="text"] {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 6px;
+    border: 1px solid rgba(30, 58, 95, 0.8);
+    background: rgba(10, 14, 26, 0.65);
+    color: var(--text-primary);
+    outline: none;
+  }
+  .s-control input[type="number"]:focus,
+  .s-control input[type="text"]:focus {
+    border-color: rgba(0, 245, 255, 0.7);
+    box-shadow: 0 0 0 2px rgba(0, 245, 255, 0.12);
+  }
+  .toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--text-mid);
+  }
+  .btn-save {
+    margin-top: 14px;
+    padding: 10px 14px;
+    border-radius: 6px;
+    border: 1px solid rgba(0, 255, 157, 0.35);
+    background: rgba(0, 255, 157, 0.08);
+    color: var(--green);
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    letter-spacing: 1px;
+    cursor: pointer;
+  }
+  .btn-save:hover { background: rgba(0, 255, 157, 0.14); }
+  @media (max-width: 850px) {
+    .settings-row { grid-template-columns: 1fr; }
+  }
+</style>
+
+<div class="settings-card">
+  <form method="post" action="{% url 'AttackApp:settings' %}">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="save">
+
+    <div class="settings-row">
+      <div>
+        <div class="s-label">Dashboard refresh</div>
+        <div class="s-desc">How often the dashboard auto-updates (5–300 seconds).</div>
+      </div>
+      <div class="s-control">
+        <input type="number" name="dashboard_refresh_seconds" min="5" max="300" value="{{ user_settings.dashboard_refresh_seconds }}">
+      </div>
+    </div>
+
+    <div class="settings-row">
+      <div>
+        <div class="s-label">URL threat threshold</div>
+        <div class="s-desc">Higher = stricter (fewer detections). Lower = more sensitive (more detections).</div>
+      </div>
+      <div class="s-control">
+        <input type="text" name="url_threat_threshold" value="{{ user_settings.url_threat_threshold }}">
+      </div>
+    </div>
+
+    <div class="settings-row">
+      <div>
+        <div class="s-label">Scan history page size</div>
+        <div class="s-desc">How many rows to show in Scan History (25–1000).</div>
+      </div>
+      <div class="s-control">
+        <input type="number" name="history_page_size" min="25" max="1000" value="{{ user_settings.history_page_size }}">
+      </div>
+    </div>
+
+    <div class="settings-row">
+      <div>
+        <div class="s-label">Truncate long URLs</div>
+        <div class="s-desc">Shorten URLs in tables (dashboard + history) to keep the UI tidy.</div>
+      </div>
+      <div class="s-control">
+        <label class="toggle">
+          <input type="checkbox" name="truncate_urls_in_tables" {% if user_settings.truncate_urls_in_tables %}checked{% endif %}>
+          Enabled
+        </label>
+      </div>
+    </div>
+
+    <div class="settings-row">
+      <div>
+        <div class="s-label">Show scan scores</div>
+        <div class="s-desc">Display the model confidence score on the scan result screen.</div>
+      </div>
+      <div class="s-control">
+        <label class="toggle">
+          <input type="checkbox" name="show_scan_scores" {% if user_settings.show_scan_scores %}checked{% endif %}>
+          Enabled
+        </label>
+      </div>
+    </div>
+
+    <div class="settings-row">
+      <div>
+        <div class="s-label">Log scans to activity feed</div>
+        <div class="s-desc">Adds each scan to Recent Activity (flagged when threat, completed when safe).</div>
+      </div>
+      <div class="s-control">
+        <label class="toggle">
+          <input type="checkbox" name="log_scan_to_recent_activity" {% if user_settings.log_scan_to_recent_activity %}checked{% endif %}>
+          Enabled
+        </label>
+      </div>
+    </div>
+
+    <div class="settings-row">
+      <div>
+        <div class="s-label">Notifications</div>
+        <div class="s-desc">Enable/disable in-app notifications (future: email/SMS).</div>
+      </div>
+      <div class="s-control">
+        <label class="toggle">
+          <input type="checkbox" name="enable_notifications" {% if user_settings.enable_notifications %}checked{% endif %}>
+          Enabled
+        </label>
+      </div>
+    </div>
+
+    <div class="settings-row">
+      <div>
+        <div class="s-label">Email alerts (optional)</div>
+        <div class="s-desc">Stores your preference for email alerts when a threat is detected.</div>
+      </div>
+      <div class="s-control">
+        <label class="toggle" style="margin-bottom: 10px;">
+          <input type="checkbox" name="email_alerts_on_threat" {% if user_settings.email_alerts_on_threat %}checked{% endif %}>
+          Enable email alerts on threat
+        </label>
+        <input type="text" name="alert_email" placeholder="alert email (optional)" value="{{ user_settings.alert_email|default:user.email }}">
+      </div>
+    </div>
+
+    <button class="btn-save" type="submit">SAVE SETTINGS</button>
+  </form>
+
+  <div style="margin-top: 16px; display:flex; gap: 10px; flex-wrap: wrap;">
+    <a class="btn-save" style="text-decoration:none; display:inline-block;" href="{% url 'AttackApp:export_scan_history_csv' %}">
+      EXPORT SCAN HISTORY (CSV)
+    </a>
+    <form method="post" action="{% url 'AttackApp:settings' %}" onsubmit="return confirm('Clear all scan history?');">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="clear_scan_history">
+      <button class="btn-save" style="border-color: rgba(255,45,120,0.35); background: rgba(255,45,120,0.08); color: var(--red);" type="submit">
+        CLEAR SCAN HISTORY
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,29 @@
+Django==6.0.3
+djangorestframework==3.14.0
+psycopg2-binary==2.9.9
+SQLAlchemy==2.0.25
+cryptography==42.0.0
+python-dotenv==1.0.0
+numpy==2.3.0
+scikit-learn==1.7.1
+joblib==1.5.1
+
+# Background task processing
+celery==5.3.4
+redis==5.0.1
+celery-beat==2.5.0
+django-celery-beat==2.5.0
+
+# Windows service management
+pywin32==306
+
+# System monitoring
+psutil==5.9.6
+
+# Optional: extracting URLs from uploaded files (best-effort)
+beautifulsoup4
+lxml
+pdfminer.six
+python-docx
+pillow
+pytesseract

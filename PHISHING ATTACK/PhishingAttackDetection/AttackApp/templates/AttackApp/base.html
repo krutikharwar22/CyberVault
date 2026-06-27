@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}CyberVault{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-void:      #010409;
+      --bg-deep:      #0a0e1a;
+      --bg-panel:     #0d1526;
+      --bg-card:      #111827;
+      --bg-hover:     #162035;
+      --border:       #1e3a5f;
+      --border-glow:  #0ff;
+      --accent:       #00f5ff;
+      --accent2:      #00ff9d;
+      --accent3:      #ff2d78;
+      --accent4:      #ffd700;
+      --text-primary: #e0f4ff;
+      --text-mid:     #7ab3cc;
+      --text-dim:     #3a6a8a;
+      --red:          #ff2d78;
+      --yellow:       #ffd700;
+      --green:        #00ff9d;
+      --blue:         #4cc9f0;
+      --font-mono:    'Share Tech Mono', monospace;
+      --font-display: 'Orbitron', sans-serif;
+      --font-ui:      'Rajdhani', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      background: var(--bg-void);
+      color: var(--text-primary);
+      font-family: var(--font-ui);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Scanline overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,245,255,0.012) 2px,
+        rgba(0,245,255,0.012) 4px
+      );
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* Grid bg */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,245,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,245,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── NAVBAR ── */
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(10,14,26,0.95);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2rem;
+      height: 60px;
+    }
+    .nav-brand {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      font-weight: 900;
+      color: var(--accent);
+      text-decoration: none;
+      letter-spacing: 3px;
+      text-shadow: 0 0 20px rgba(0,245,255,0.6);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .nav-brand .shield {
+      width: 28px;
+      height: 28px;
+      border: 2px solid var(--accent);
+      transform: rotate(45deg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 12px rgba(0,245,255,0.4);
+    }
+    .nav-brand .shield span {
+      transform: rotate(-45deg);
+      font-size: 0.7rem;
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      list-style: none;
+    }
+    .nav-links a {
+      padding: 6px 14px;
+      border-radius: 3px;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      letter-spacing: 1px;
+      color: var(--text-mid);
+      text-decoration: none;
+      border: 1px solid transparent;
+      transition: all 0.2s;
+    }
+    .nav-links a:hover, .nav-links a.active {
+      color: var(--accent);
+      border-color: var(--border);
+      background: rgba(0,245,255,0.05);
+    }
+    .nav-user {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--text-mid);
+    }
+    .nav-user .badge {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+      animation: pulse 2s infinite;
+    }
+    .btn-logout {
+      padding: 5px 14px;
+      border: 1px solid rgba(255,45,120,0.4);
+      background: rgba(255,45,120,0.08);
+      color: var(--red);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      letter-spacing: 1px;
+      cursor: pointer;
+      border-radius: 3px;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .btn-logout:hover {
+      background: rgba(255,45,120,0.2);
+      box-shadow: 0 0 12px rgba(255,45,120,0.3);
+    }
+
+    /* ── MAIN CONTENT ── */
+    main {
+      position: relative;
+      z-index: 1;
+      padding: 2rem;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    /* ── UTILITY ── */
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+    @keyframes flicker {
+      0%,100% { opacity:1; } 92% { opacity:1; } 93% { opacity:0.7; } 94% { opacity:1; }
+    }
+    @keyframes slideIn {
+      from { transform: translateY(16px); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    /* Messages */
+    .messages { list-style: none; margin-bottom: 1rem; }
+    .messages li {
+      padding: 10px 16px;
+      border-left: 3px solid var(--accent);
+      background: rgba(0,245,255,0.07);
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      margin-bottom: 6px;
+      animation: slideIn 0.3s ease;
+    }
+    .messages li.error { border-color: var(--red); background: rgba(255,45,120,0.07); color: var(--red); }
+    .messages li.success { border-color: var(--green); background: rgba(0,255,157,0.07); color: var(--green); }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-deep); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+  {% if user.is_authenticated %}
+  <nav class="navbar">
+    <a href="{% url 'AttackApp:dashboard' %}" class="nav-brand">
+      <div class="shield"><span>⬡</span></div>
+      CYBERVAULT
+    </a>
+    <ul class="nav-links">
+      <li><a href="{% url 'AttackApp:dashboard' %}" class="{% block nav_dashboard %}{% endblock %}">DASHBOARD</a></li>
+      <li><a href="{% url 'AttackApp:view_report' %}" class="{% block nav_report %}{% endblock %}">REPORTS</a></li>
+      <li><a href="{% url 'AttackApp:profile' %}" class="{% block nav_profile %}{% endblock %}">PROFILE</a></li>
+      <li><a href="{% url 'AttackApp:scan' %}" class="{% block nav_scan %}{% endblock %}">NEW SCAN</a></li>
+      <li><a href="{% url 'AttackApp:history' %}" class="{% block nav_history %}{% endblock %}">HISTORY</a></li>
+      <li><a href="{% url 'AttackApp:settings' %}" class="{% block nav_settings %}{% endblock %}">SETTINGS</a></li>
+      <li><a href="{% url 'AttackApp:logs' %}" class="{% block nav_logs %}{% endblock %}">LOGS</a></li>
+      {% if user.is_staff or user.is_superuser %}
+        <li><a href="{% url 'AttackApp:admin_users' %}" class="{% block nav_admin_users %}{% endblock %}">USERS</a></li>
+        <li><a href="{% url 'AttackApp:admin_security' %}" class="{% block nav_admin_security %}{% endblock %}">SECURITY</a></li>
+      {% endif %}
+    </ul>
+    <div class="nav-user">
+      <div class="badge"></div>
+      <span>{{ user.username|upper }}</span>
+      <a href="{% url 'AttackApp:logout' %}" class="btn-logout">LOGOUT</a>
+    </div>
+  </nav>
+  {% endif %}
+
+  <main>
+    {% if messages %}
+    <ul class="messages">
+      {% for msg in messages %}
+      <li class="{{ msg.tags }}">// {{ msg }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

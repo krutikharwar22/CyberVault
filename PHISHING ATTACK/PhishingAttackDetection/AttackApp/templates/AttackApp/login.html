@@ -1,0 +1,286 @@
+
+{% extends 'AttackApp/base.html' %}
+{% block title %}CyberVault — Access Terminal{% endblock %}
+
+{% block extra_head %}
+<style>
+  body { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+  main { width: 100%; max-width: 480px; padding: 2rem 1rem; }
+
+  .auth-wrapper {
+    animation: slideIn 0.5s ease;
+  }
+
+  .auth-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+  .auth-logo {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 900;
+    color: var(--accent);
+    letter-spacing: 6px;
+    text-shadow: 0 0 30px rgba(0,245,255,0.7), 0 0 60px rgba(0,245,255,0.3);
+    animation: flicker 8s infinite;
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+  .auth-tagline {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    letter-spacing: 3px;
+  }
+
+  .auth-box {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 0 40px rgba(0,245,255,0.06), inset 0 1px 0 rgba(0,245,255,0.1);
+  }
+  .auth-box::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    animation: scanline 3s linear infinite;
+  }
+  @keyframes scanline {
+    0%   { transform: scaleX(0) translateX(-100%); }
+    50%  { transform: scaleX(1) translateX(0%); }
+    100% { transform: scaleX(0) translateX(100%); }
+  }
+
+  .auth-terminal-bar {
+    background: rgba(0,0,0,0.4);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-dim);
+  }
+  .terminal-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--text-dim);
+    opacity: 0.4;
+  }
+  .terminal-dot.red   { background: #ff5f57; opacity: 0.8; }
+  .terminal-dot.yel   { background: #febc2e; opacity: 0.8; }
+  .terminal-dot.grn   { background: #28c840; opacity: 0.8; }
+
+  .auth-form { padding: 2rem; }
+
+  .prompt-line {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    margin-bottom: 1.5rem;
+    letter-spacing: 1px;
+  }
+  .prompt-line span { color: var(--accent2); }
+
+  .field-group {
+    margin-bottom: 1.25rem;
+  }
+  .field-label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+  }
+  .field-label .prefix { color: var(--accent); margin-right: 4px; }
+
+  .field-input {
+    width: 100%;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 11px 14px;
+    font-family: var(--font-mono);
+    font-size: 0.88rem;
+    color: var(--text-primary);
+    outline: none;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+  .field-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px rgba(0,245,255,0.2), 0 0 20px rgba(0,245,255,0.08);
+    background: rgba(0,245,255,0.03);
+  }
+  .field-input::placeholder { color: var(--text-dim); opacity: 0.5; }
+
+  .field-error {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--red);
+    margin-top: 4px;
+    letter-spacing: 0.5px;
+  }
+
+  .btn-submit {
+    width: 100%;
+    margin-top: 1.5rem;
+    padding: 13px;
+    background: transparent;
+    border: 1px solid var(--accent);
+    border-radius: 3px;
+    color: var(--accent);
+    font-family: var(--font-display);
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 4px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+    text-transform: uppercase;
+  }
+  .btn-submit::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--accent);
+    transform: translateX(-101%);
+    transition: transform 0.3s ease;
+    z-index: 0;
+  }
+  .btn-submit:hover::before { transform: translateX(0); }
+  .btn-submit:hover { color: var(--bg-void); box-shadow: 0 0 30px rgba(0,245,255,0.4); }
+  .btn-submit span { position: relative; z-index: 1; }
+
+  .auth-footer {
+    padding: 1rem 2rem;
+    border-top: 1px solid var(--border);
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-dim);
+  }
+  .auth-footer a {
+    color: var(--accent2);
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+  .auth-footer a:hover { text-shadow: 0 0 8px var(--accent2); }
+
+  .status-bar {
+    margin-top: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    padding: 0 2px;
+  }
+  .status-bar .ok { color: var(--green); }
+
+  /* Non-field errors */
+  .auth-errors {
+    background: rgba(255,45,120,0.08);
+    border: 1px solid rgba(255,45,120,0.3);
+    border-radius: 3px;
+    padding: 10px 14px;
+    margin-bottom: 1rem;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--red);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+  <div class="auth-header">
+    <span class="auth-logo">CYBERVAULT</span>
+    <p class="auth-tagline">// THREAT INTELLIGENCE PLATFORM v2.4</p>
+  </div>
+
+  <div class="auth-box">
+    <div class="auth-terminal-bar">
+      <div class="terminal-dot red"></div>
+      <div class="terminal-dot yel"></div>
+      <div class="terminal-dot grn"></div>
+      <span style="margin-left:8px;">auth_terminal.sh — SECURE LOGIN</span>
+    </div>
+
+    <div class="auth-form">
+      <p class="prompt-line"><span>root@cybervault:~$</span> ./authenticate --user</p>
+
+      {% if form.non_field_errors %}
+      <div class="auth-errors">
+        {% for err in form.non_field_errors %}⚠ {{ err }}{% endfor %}
+      </div>
+      {% endif %}
+
+      <form method="post" action="{% url 'AttackApp:login' %}">
+        {% csrf_token %}
+
+        <div class="field-group">
+          <label class="field-label" for="id_username">
+            <span class="prefix">></span> USERNAME
+          </label>
+          <input
+            class="field-input"
+            type="text"
+            id="id_username"
+            name="username"
+            autocomplete="username"
+            placeholder="enter username"
+            value="{{ form.username.value|default:'' }}"
+            autofocus
+          />
+          {% if form.username.errors %}
+          <div class="field-error">{% for e in form.username.errors %}✗ {{ e }}{% endfor %}</div>
+          {% endif %}
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="id_password">
+            <span class="prefix">></span> PASSWORD
+          </label>
+          <input
+            class="field-input"
+            type="password"
+            id="id_password"
+            name="password"
+            autocomplete="current-password"
+            placeholder="••••••••••••"
+          />
+          {% if form.password.errors %}
+          <div class="field-error">{% for e in form.password.errors %}✗ {{ e }}{% endfor %}</div>
+          {% endif %}
+        </div>
+
+        <input type="hidden" name="next" value="{{ next }}" />
+
+        <button type="submit" class="btn-submit"><span>AUTHENTICATE</span></button>
+      </form>
+
+      <div class="status-bar">
+        <span class="ok">● ENCRYPTED CHANNEL</span>
+        <span>TLS 1.3</span>
+        <span>AES-256</span>
+      </div>
+    </div>
+
+    <div class="auth-footer">
+      NO ACCOUNT? &nbsp;<a href="{% url 'AttackApp:register' %}">REQUEST ACCESS →</a>
+    </div>
+  </div>
+</div>
+<p style="text-align:center;margin-top:1rem">
+  <a href="{% url 'AttackApp:forgot_password' %}">Forgot Password?</a>
+</p>
+{% endblock %}

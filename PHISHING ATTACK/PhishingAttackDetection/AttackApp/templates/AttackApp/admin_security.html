@@ -1,0 +1,135 @@
+{% extends 'AttackApp/base.html' %}
+
+{% block nav_admin_security %}active{% endblock %}
+
+{% block content %}
+<h1>Admin — Security</h1>
+
+<style>
+  .wrap { margin-top: 14px; max-width: 1400px; }
+  .meta { margin-top: 8px; font-family: var(--font-mono); font-size: 0.82rem; color: var(--text-dim); }
+  .panel {
+    margin-top: 14px;
+    background: rgba(0, 245, 255, 0.04);
+    border: 1px solid rgba(30, 58, 95, 0.8);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  h2 { font-size: 1rem; margin: 18px 0 8px; color: var(--accent); letter-spacing: 2px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td {
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(30, 58, 95, 0.55);
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--text-mid);
+    vertical-align: top;
+  }
+  th { color: var(--text-primary); background: rgba(1, 4, 9, 0.45); }
+  tr:hover td { background: rgba(0,245,255,0.035); }
+  .tag { color: var(--accent2); }
+  .dim { color: var(--text-dim); }
+  .btn-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .btn {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: rgba(0,245,255,0.08);
+    color: var(--accent);
+  }
+  .btn:hover { background: rgba(0,245,255,0.15); }
+  .btn-danger { border-color: rgba(255,45,120,0.5); color: var(--red); background: rgba(255,45,120,0.08); }
+  .inline-form { display: inline; margin: 0; }
+</style>
+
+<div class="wrap">
+  <p class="meta">
+    Review recent suspicious signals (failed logins, flagged scans, reports). Blocked IPs are rejected at the edge for every request.
+  </p>
+
+  <h2>RECENT INCIDENTS</h2>
+  <div class="panel">
+    <table>
+      <thead>
+        <tr>
+          <th>Time (UTC)</th>
+          <th>Type</th>
+          <th>User</th>
+          <th>IP</th>
+          <th>Description</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for act in incidents %}
+        <tr>
+          <td class="mono">{{ act.timestamp|date:"Y-m-d H:i:s" }}</td>
+          <td><span class="tag">{{ act.get_activity_type_display }}</span></td>
+          <td>{% if act.user %}<span class="tag">{{ act.user }}</span>{% else %}<span class="dim">—</span>{% endif %}</td>
+          <td class="mono">{% if act.source_ip %}{{ act.source_ip }}{% else %}<span class="dim">—</span>{% endif %}</td>
+          <td>{{ act.description|truncatechars:120 }}</td>
+          <td>
+            {% if act.source_ip %}
+            <div class="btn-row">
+              <form class="inline-form" method="post" action="{% url 'AttackApp:admin_block_ip_form' %}">
+                {% csrf_token %}
+                <input type="hidden" name="ip" value="{{ act.source_ip }}" />
+                <button type="submit" class="btn btn-danger">Block IP</button>
+              </form>
+              <form class="inline-form" method="post" action="{% url 'AttackApp:admin_report_ip_form' %}">
+                {% csrf_token %}
+                <input type="hidden" name="ip" value="{{ act.source_ip }}" />
+                <input type="hidden" name="notes" value="From incident {{ act.id }}" />
+                <button type="submit" class="btn">Report IP</button>
+              </form>
+            </div>
+            {% else %}
+            <span class="dim">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="dim">No recent incidents in this view.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <h2>BLOCKED IP ADDRESSES</h2>
+  <div class="panel">
+    <table>
+      <thead>
+        <tr>
+          <th>IP</th>
+          <th>Reason</th>
+          <th>Blocked by</th>
+          <th>Created (UTC)</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in blocked_ips %}
+        <tr>
+          <td class="mono"><span class="tag">{{ row.ip_address }}</span></td>
+          <td>{{ row.reason|truncatechars:80|default:"—" }}</td>
+          <td>{% if row.blocked_by %}{{ row.blocked_by.username }}{% else %}<span class="dim">—</span>{% endif %}</td>
+          <td class="mono">{{ row.created_at|date:"Y-m-d H:i:s" }}</td>
+          <td>
+            <form class="inline-form" method="post" action="{% url 'AttackApp:admin_unblock_ip' %}">
+              {% csrf_token %}
+              <input type="hidden" name="ip" value="{{ row.ip_address }}" />
+              <button type="submit" class="btn">Unblock</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="dim">No IPs are currently blocked.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,114 @@
+{% extends 'AttackApp/base.html' %}
+
+{% block nav_admin_users %}active{% endblock %}
+
+{% block content %}
+<h1>Admin — Users & Logins</h1>
+
+<style>
+  .wrap { margin-top: 14px; max-width: 1400px; }
+  .meta {
+    margin-top: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--text-dim);
+  }
+  .panel {
+    margin-top: 14px;
+    background: rgba(0, 245, 255, 0.04);
+    border: 1px solid rgba(30, 58, 95, 0.8);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  th, td {
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(30, 58, 95, 0.55);
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--text-mid);
+    vertical-align: top;
+  }
+  th {
+    color: var(--text-primary);
+    letter-spacing: 1px;
+    background: rgba(1, 4, 9, 0.45);
+  }
+  tr:hover td { background: rgba(0,245,255,0.035); }
+  .tag { color: var(--accent2); }
+  .dim { color: var(--text-dim); }
+  .bad { color: var(--red); }
+  .ok { color: var(--green); }
+  .right { text-align: right; }
+  .mono { font-family: var(--font-mono); }
+</style>
+
+<div class="wrap">
+  <div class="meta">
+    Total users: <span class="tag">{{ users_total }}</span>
+    · Total login logs: <span class="tag">{{ logins_total }}</span>
+  </div>
+
+  <div class="panel">
+    <table>
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Email</th>
+          <th class="right">Login count</th>
+          <th>Last login (auth)</th>
+          <th>Last login (LoginLog)</th>
+          <th>Status</th>
+          <th>Access</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+          <tr>
+            <td>
+              <div><strong class="tag">{{ u.username }}</strong></div>
+              {% if u.full_name %}<div class="dim">{{ u.full_name }}</div>{% endif %}
+              {% if u.is_superuser %}<div class="dim">role: <span class="tag">superuser</span></div>
+              {% elif u.is_staff %}<div class="dim">role: <span class="tag">staff</span></div>
+              {% endif %}
+            </td>
+            <td class="mono">{% if u.email %}{{ u.email }}{% else %}<span class="dim">—</span>{% endif %}</td>
+            <td class="right"><strong class="tag">{{ u.login_count }}</strong></td>
+            <td class="mono">{% if u.last_login %}{{ u.last_login|date:"Y-m-d H:i:s" }} UTC{% else %}<span class="dim">—</span>{% endif %}</td>
+            <td class="mono">{% if u.last_login_time %}{{ u.last_login_time|date:"Y-m-d H:i:s" }} UTC{% else %}<span class="dim">—</span>{% endif %}</td>
+            <td>
+              {% if u.is_active %}
+                <span class="ok">ACTIVE</span>
+              {% else %}
+                <span class="bad">DISABLED</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if u.username == request.user.username %}
+                <span class="dim">—</span>
+              {% elif u.is_superuser and not request.user.is_superuser %}
+                <span class="dim">superuser</span>
+              {% else %}
+                <form method="post" action="{% url 'AttackApp:admin_user_toggle' %}" style="display:inline;">
+                  {% csrf_token %}
+                  <input type="hidden" name="username" value="{{ u.username }}" />
+                  {% if u.is_active %}
+                    <input type="hidden" name="active" value="0" />
+                    <button type="submit" style="font-family:var(--font-mono);font-size:0.72rem;padding:6px 10px;border-radius:4px;cursor:pointer;border:1px solid rgba(255,45,120,0.45);background:rgba(255,45,120,0.08);color:var(--red);">Disable</button>
+                  {% else %}
+                    <input type="hidden" name="active" value="1" />
+                    <button type="submit" style="font-family:var(--font-mono);font-size:0.72rem;padding:6px 10px;border-radius:4px;cursor:pointer;border:1px solid rgba(0,255,157,0.45);background:rgba(0,255,157,0.08);color:var(--green);">Enable</button>
+                  {% endif %}
+                </form>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="7" class="dim">No users found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
